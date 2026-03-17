@@ -604,6 +604,19 @@ body.edit-mode .mp-card:hover .mp-del-btn{display:flex}
   border:1px solid rgba(192,57,43,.2);
 }
 #mp-filters::-webkit-scrollbar{display:none}
+
+/* Botón ver todos de cada categoría */
+.mp-ver-todos{
+  grid-column:1/-1;
+  background:transparent;
+  border:1.5px solid rgba(192,57,43,.35);
+  color:var(--red);
+  font-family:var(--font-nav);font-size:13px;letter-spacing:2px;
+  padding:12px 24px;border-radius:8px;cursor:pointer;
+  transition:all .2s;width:100%;margin-top:4px;
+  display:none;
+}
+.mp-ver-todos:hover{background:rgba(192,57,43,.1);border-color:var(--red)}
 #menu-page{animation:fadeIn .25s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @media(max-width:600px){
@@ -1834,9 +1847,12 @@ function buildMenuPage(){
       mpCard.dataset.cat = cat;
       mpCard.dataset.srcTab = tabId;
       mpCard.dataset.srcIdx = idx;
+      // data-preview: solo la primera carta de cada categoría se muestra en "Todos"
+      if(idx === 0) mpCard.dataset.preview = 'true';
+
       mpCard.innerHTML = `
         <button class="mp-del-btn" onclick="deleteMpCard(this)" title="Eliminar plato">✕</button>
-        <div class="mp-card-img" onclick="clickCardImg(this,event)" style="cursor:pointer;position:relative;overflow:hidden;height:220px;background:#2c1810">
+        <div class="mp-card-img" onclick="clickCardImg(this,event)" style="cursor:pointer;position:relative;overflow:hidden;height:160px;background:#2c1810">
           <img class="card-img-el" src="${imgSrc}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:transform .4s;${imgSrc?'':'opacity:0'}">
           ${!imgSrc ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;color:rgba(255,255,255,.12)">📷</div>` : ''}
           ${tag ? `<div class="mp-card-badge">${tag}</div>` : ''}
@@ -1883,6 +1899,17 @@ function buildMenuPage(){
       empty.textContent = `Sin platos — agrega el primero`;
       container.insertBefore(empty, addBtn);
     }
+
+    // Añadir botón "Ver todos los X" al final de cada sección en modo preview
+    const verBtn = document.createElement('button');
+    verBtn.className = 'mp-ver-todos';
+    verBtn.dataset.cat = cat;
+    verBtn.innerHTML = `Ver todos los ${label} ${icon}`;
+    verBtn.onclick = () => {
+      const filtBtn = document.querySelector(`.mp-filter[data-cat="${cat}"]`);
+      if(filtBtn) filterMenu(filtBtn, cat);
+    };
+    container.appendChild(verBtn);
   });
 }
 
@@ -1935,15 +1962,14 @@ function applyMpCardImg(e, input){
 function openMenuPage(){
   buildMenuPage();
   const page = document.getElementById('menu-page');
-  // Solo añadir padding si el editor está visible
   const editBarH = document.body.classList.contains('editor-active') ? 46 : 0;
   page.style.paddingTop = editBarH + 'px';
   page.style.display = 'block';
   page.scrollTop = 0;
   document.body.style.overflow = 'hidden';
-  document.querySelectorAll('.mp-filter').forEach(b => b.classList.remove('active'));
-  document.querySelector('.mp-filter[data-cat="all"]').classList.add('active');
-  document.querySelectorAll('.mp-section').forEach(s => s.style.display = '');
+  // Activar modo "Todos" con preview
+  const allBtn = document.querySelector('.mp-filter[data-cat="all"]');
+  if(allBtn) filterMenu(allBtn, 'all');
 }
 
 function closeMenuPage(){
@@ -1954,22 +1980,32 @@ function closeMenuPage(){
 function filterMenu(btn, cat){
   document.querySelectorAll('.mp-filter').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.querySelectorAll('.mp-section').forEach(s => {
-    s.style.display = (cat === 'all' || s.dataset.cat === cat) ? '' : 'none';
-  });
-  // Scroll hasta la sección si es una categoría específica
-  if(cat !== 'all'){
-    const target = document.querySelector(`.mp-section[data-cat="${cat}"]`);
-    if(target){
-      setTimeout(() => {
-        const page = document.getElementById('menu-page');
-        const headerH = page.querySelector('div[style*="sticky"]')?.offsetHeight || 62;
-        const targetTop = target.offsetTop - headerH - 16;
-        page.scrollTo({ top: targetTop, behavior: 'smooth' });
-      }, 50);
-    }
-  } else {
+
+  if(cat === 'all'){
+    // Modo "Todos": mostrar todas las secciones pero solo 1 carta por sección
+    document.querySelectorAll('.mp-section').forEach(s => s.style.display = '');
+    document.querySelectorAll('.mp-card').forEach(c => {
+      c.style.display = c.dataset.preview === 'true' ? '' : 'none';
+    });
+    document.querySelectorAll('.mp-ver-todos').forEach(b => b.style.display = '');
+    document.querySelectorAll('.mp-add-btn').forEach(b => b.style.display = editMode ? 'flex' : 'none');
     document.getElementById('menu-page').scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    // Modo categoría: mostrar solo esa sección con TODAS sus cartas
+    document.querySelectorAll('.mp-section').forEach(s => {
+      s.style.display = s.dataset.cat === cat ? '' : 'none';
+    });
+    document.querySelectorAll('.mp-card').forEach(c => {
+      c.style.display = c.dataset.cat === cat ? '' : 'none';
+    });
+    document.querySelectorAll('.mp-ver-todos').forEach(b => b.style.display = 'none');
+    // Scroll a la sección
+    setTimeout(() => {
+      const page = document.getElementById('menu-page');
+      const headerH = page.querySelector('div[style*="sticky"]')?.offsetHeight || 80;
+      const target = document.querySelector(`.mp-section[data-cat="${cat}"]`);
+      if(target) page.scrollTo({ top: target.offsetTop - headerH - 10, behavior: 'smooth' });
+    }, 50);
   }
 }
 
