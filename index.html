@@ -4,6 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Delicias Pa' Toditos</title>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtMQYnSL_QJGqeUJ94n3xCd7GFPSl1olk",
+    authDomain: "delicias-pa-toditos.firebaseapp.com",
+    projectId: "delicias-pa-toditos",
+    storageBucket: "delicias-pa-toditos.firebasestorage.app",
+    messagingSenderId: "65510589697",
+    appId: "1:65510589697:web:13595836c096faf35e4700"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const REF = doc(db, 'sitio', 'estado');
+
+  // Exponer al scope global para que el resto del JS lo use
+  window._fbDb  = db;
+  window._fbRef = REF;
+  window._fbSetDoc    = setDoc;
+  window._fbOnSnapshot = onSnapshot;
+
+  // Escuchar cambios en tiempo real — cuando alguien edita, todos ven los cambios
+  onSnapshot(REF, (snap) => {
+    if(snap.exists()){
+      const data = snap.data();
+      // Solo aplicar si NO somos el editor activo (para no pisarnos a nosotros mismos)
+      if(!window._editMode){
+        if(window.applyState) window.applyState(data);
+      }
+    }
+  });
+
+  window._fbReady = true;
+  console.log('🔥 Firebase conectado');
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bebas+Neue&family=Lato:wght@300;400;700&family=Playfair+Display:wght@700;900&family=Oswald:wght@600;700&family=Lobster&family=Righteous&family=Patua+One&family=Rye&family=Ultra&family=Permanent+Marker&family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -982,6 +1020,7 @@ function submitPassword(){
 
 function activateEditor(){
   editMode = true;
+  window._editMode = true;
   document.body.classList.add('editor-active');
   document.getElementById('edit-bar').style.display = 'flex';
   document.querySelector('.page-wrap').style.paddingTop = '46px';
@@ -2041,20 +2080,30 @@ function applyState(state){
 // ── Auto-guardado cada 3 segundos si hubo cambios ──
 let _lastSaved = '';
 function autoSave(){
-  if(!editMode) return; // solo guardar cuando el editor está activo
+  if(!editMode) return;
   try {
     const state = collectState();
     const json  = JSON.stringify(state);
     if(json === _lastSaved) return;
-    localStorage.setItem(STORE_KEY, json);
     _lastSaved = json;
-    showSavedToast();
+
+    // Guardar en localStorage como respaldo local
+    localStorage.setItem(STORE_KEY, json);
+
+    // Guardar en Firebase (nube) — todos los visitantes verán los cambios
+    if(window._fbRef && window._fbSetDoc){
+      window._fbSetDoc(window._fbRef, state)
+        .then(() => showSavedToast('☁️ Guardado en la nube'))
+        .catch(e => { console.warn('Firebase save error:', e); showSavedToast('✓ Guardado local'); });
+    } else {
+      showSavedToast('✓ Guardado local');
+    }
   } catch(e){ console.warn('AutoSave error:', e); }
 }
 setInterval(autoSave, 3000);
 
 // ── Toast de confirmación ──
-function showSavedToast(){
+function showSavedToast(msg){
   let toast = document.getElementById('save-toast');
   if(!toast){
     toast = document.createElement('div');
@@ -2062,7 +2111,8 @@ function showSavedToast(){
     toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:#1a1a18;border:1px solid rgba(192,57,43,.5);color:rgba(245,237,224,.8);padding:10px 18px;border-radius:7px;font-size:12px;letter-spacing:1px;font-family:Lato,sans-serif;transition:opacity .4s;pointer-events:none;display:flex;align-items:center;gap:8px;';
     document.body.appendChild(toast);
   }
-  toast.innerHTML = '<span style="color:#27ae60;font-size:14px">✓</span> Cambios guardados';
+  const texto = msg || '✓ Guardado';
+  toast.innerHTML = `<span style="color:#27ae60;font-size:14px">✓</span> ${texto}`;
   toast.style.opacity = '1';
   clearTimeout(toast._t);
   toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
@@ -2100,7 +2150,11 @@ function saveData(){
 // ════════ INIT — ejecutar al final cuando todas las funciones están listas ════════
 (function initAuth(){
   const bar = document.getElementById('edit-bar');
+  // Exponer editMode al scope global para Firebase listener
+  window._editMode = false;
+
   if(checkAuth()){
+    window._editMode = true;
     activateEditor();
   } else {
     bar.style.display = 'none';
@@ -2109,7 +2163,8 @@ function saveData(){
     document.addEventListener('keydown', function(e){
       if(e.ctrlKey && e.shiftKey && e.key === 'E') requestPassword();
     });
-    // Cargar datos para que visitantes vean los cambios publicados
+    // Para visitantes: Firebase ya escucha en tiempo real (onSnapshot arriba)
+    // Pero también cargamos localStorage como fallback inmediato mientras Firebase carga
     try {
       const raw = localStorage.getItem(STORE_KEY);
       if(raw) applyState(JSON.parse(raw));
