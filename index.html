@@ -314,12 +314,49 @@ footer{background:var(--brown);padding:40px 24px 24px;text-align:center;border-t
   .gallery-grid{grid-template-columns:1fr 1fr;grid-template-rows:auto}
   .gallery-cell:first-child{grid-column:span 2;grid-row:span 1}
   .nav-links{display:none}
+  .nav-cta{display:none}
+  .hamburger{display:flex}
   .hero-ribbon::before,.hero-ribbon::after{display:none}
   .hero-ribbon{padding:8px 24px}
   body.panel-open .page-wrap{margin-right:0}
 }
 
-/* ════ MENU PAGE ════ */
+/* ════ HAMBURGER ════ */
+.hamburger{
+  display:none;flex-direction:column;justify-content:center;gap:5px;
+  background:none;border:none;cursor:pointer;padding:6px;z-index:901;
+}
+.hamburger span{
+  display:block;width:24px;height:2px;background:var(--cream);
+  border-radius:2px;transition:all .3s ease;transform-origin:center;
+}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* Mobile dropdown */
+#mobile-menu{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:899;background:rgba(10,5,2,.97);backdrop-filter:blur(16px);
+  flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  padding:80px 24px 40px;
+}
+#mobile-menu.open{display:flex}
+#mobile-menu a, #mobile-menu button.mob-link{
+  font-family:var(--font-nav);font-size:clamp(26px,8vw,36px);
+  letter-spacing:4px;color:rgba(245,237,224,.75);text-decoration:none;
+  padding:10px 0;border:none;background:none;cursor:pointer;
+  transition:color .2s;display:block;text-align:center;width:100%;
+}
+#mobile-menu a:hover, #mobile-menu button.mob-link:hover{color:var(--gold)}
+#mobile-menu .mob-divider{width:40px;height:1px;background:rgba(192,57,43,.4);margin:8px auto}
+#mobile-menu .mob-cta{
+  font-family:var(--font-nav);font-size:18px;letter-spacing:3px;
+  background:var(--red);color:#fff;border:none;
+  padding:14px 40px;border-radius:4px;cursor:pointer;
+  margin-top:16px;transition:background .2s;
+}
+#mobile-menu .mob-cta:hover{background:var(--red-dark)}
 .mp-filter{
   font-family:var(--font-nav);font-size:13px;letter-spacing:2px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
@@ -512,8 +549,26 @@ body.edit-mode .mp-card:hover .mp-del-btn{display:flex}
       <li><a href="#contacto">Contacto</a></li>
     </ul>
     <button class="nav-cta" onclick="document.getElementById('contacto').scrollIntoView({behavior:'smooth'})">Haz tu pedido</button>
+    <!-- Hamburger — solo móvil -->
+    <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- MOBILE MENU -->
+<div id="mobile-menu">
+  <a href="#inicio"   onclick="closeMobileMenu()">Inicio</a>
+  <div class="mob-divider"></div>
+  <a href="#nosotros" onclick="closeMobileMenu()">Nosotros</a>
+  <div class="mob-divider"></div>
+  <a href="#"         onclick="closeMobileMenu();openMenuPage();return false;">Menú</a>
+  <div class="mob-divider"></div>
+  <a href="#galeria"  onclick="closeMobileMenu()">Galería</a>
+  <div class="mob-divider"></div>
+  <a href="#contacto" onclick="closeMobileMenu()">Contacto</a>
+  <button class="mob-cta" onclick="closeMobileMenu();document.getElementById('contacto').scrollIntoView({behavior:'smooth'})">Haz tu pedido</button>
+</div>
 
 <!-- HERO -->
 <section id="inicio" class="hero">
@@ -744,7 +799,7 @@ body.edit-mode .mp-card:hover .mp-del-btn{display:flex}
           <div class="ci-icon" style="background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.3);">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.855L.054 23.454a.75.75 0 00.916.916l5.6-1.479A11.953 11.953 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.694-.528-5.217-1.443l-.374-.222-3.878 1.023 1.023-3.878-.222-.374A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           </div>
-          <div><div class="ci-label">WhatsApp</div><div class="ci-value"><a id="whatsapp-link" href="https://wa.me/573127979197?text=Hola,%20quiero%20hacer%20un%20pedido" target="_blank" style="color:rgba(37,211,102,.9);text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'" contenteditable="false">+57 312 797 9197</a></div></div>
+          <div><div class="ci-label">WhatsApp</div><div class="ci-value"><a id="whatsapp-link" href="https://wa.me/573025368565?text=Hola,%20quiero%20hacer%20un%20pedido" target="_blank" style="color:rgba(37,211,102,.9);text-decoration:none;transition:opacity .2s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'" contenteditable="false">+57 302 536 8565</a></div></div>
         </div>
         <div class="contact-item">
           <div class="ci-icon" style="background:rgba(193,53,132,.12);border-color:rgba(193,53,132,.3);">
@@ -972,6 +1027,23 @@ const COLOR_PRESETS = {
   bg:     ['#1a1a18','#0d0d0b','#2c1810','#1a0a04','#0a1628','#0d1a0d','#1a0a28','#2c2c2a','#1c1209','#2a1f0a','#111827','#18181b'],
   cream:  ['#f5ede0','#ffffff','#fdf6ec','#fff8f0','#fffbf5','#f0f0f0','#ffe4b5','#ffd700','#ffebcd','#faebd7','#e8d5b7','#d4b896'],
 };
+
+// ════════ MOBILE MENU ════════
+function toggleMobileMenu(){
+  const menu = document.getElementById('mobile-menu');
+  const btn  = document.getElementById('hamburger-btn');
+  const isOpen = menu.classList.contains('open');
+  if(isOpen){ closeMobileMenu(); } else {
+    menu.classList.add('open');
+    btn.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+function closeMobileMenu(){
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
 // ════════ EDIT MODE ════════
 function toggleEdit(){
@@ -1240,8 +1312,8 @@ function buildContactPanel(){
   document.getElementById('dp-title').textContent = '📞 Contacto';
   const wa = document.getElementById('whatsapp-link');
   const ig = document.getElementById('instagram-link');
-  const waNum = wa ? wa.textContent.trim() : '+57 312 797 9197';
-  const waHref = wa ? wa.href.replace('https://wa.me/','').split('?')[0] : '573127979197';
+  const waNum = wa ? wa.textContent.trim() : '+57 302 536 8565';
+  const waHref = wa ? wa.href.replace('https://wa.me/','').split('?')[0] : '573025368565';
   const igUser = ig ? ig.textContent.trim().replace('@','') : 'delicias_pa_toditos';
 
   document.getElementById('dp-content').innerHTML = `
@@ -1953,8 +2025,8 @@ function applyState(state){
     });
   }
   // Links de contacto — no sobrescribir con datos viejos del localStorage
-  const correctWa = 'wa.me/573127979197';
-  if(state.waHref && state.waHref.includes('573127979197')){
+  const correctWa = 'wa.me/573025368565';
+  if(state.waHref && state.waHref.includes('573025368565')){
     // es el número correcto, aplicar normalmente
     const wa = document.getElementById('whatsapp-link');
     if(wa){ wa.href = state.waHref; if(state.waText) wa.textContent = state.waText; }
