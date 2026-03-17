@@ -62,7 +62,7 @@ body{font-family:var(--font-body);background:var(--charcoal);color:var(--cream);
 #edit-bar{
   position:fixed;top:0;left:0;right:0;z-index:9999;
   background:rgba(12,6,2,.97);border-bottom:2px solid var(--red);
-  display:flex;align-items:center;gap:6px;
+  display:none;align-items:center;gap:6px;
   padding:7px 16px;backdrop-filter:blur(8px);
   flex-wrap:wrap;
 }
@@ -176,7 +176,7 @@ body{font-family:var(--font-body);background:var(--charcoal);color:var(--cream);
 /* ════════════════════════════════
    PAGE LAYOUT
 ════════════════════════════════ */
-.page-wrap{padding-top:46px;transition:margin-right .3s}
+.page-wrap{padding-top:0;transition:margin-right .3s}
 body.panel-open .page-wrap{margin-right:340px}
 
 /* Editable highlights */
